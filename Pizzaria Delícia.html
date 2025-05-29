@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pizzaria Delícia - Pedido e Administração</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%);
+    color: #3b2f2f;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: #bf360c;
+    color: white;
+    padding: 1.2rem 2rem;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgb(0 0 0 / 0.2);
+    user-select: none;
+  }
+  nav {
+    display: flex;
+    justify-content: center;
+    background: #d84315;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 1.15rem 2rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+    position: relative;
+  }
+  nav button:not(:last-child) {
+    border-right: 1px solid rgba(255,255,255,0.3);
+  }
+  nav button:hover, nav button.active {
+    background: #bf360c;
+    transform: scale(1.05);
+    z-index: 1;
+  }
+  main {
+    flex-grow: 1;
+    max-width: 1040px;
+    width: 90%;
+    margin: 1.8rem auto 3rem auto;
+    background: #fff8f0;
+    border-radius: 18px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.15);
+    padding: 2rem 2.5rem;
+  }
+  /* Sections */
+  section {
+    display: none;
+  }
+  section.active {
+    display: block;
+  }
+  /* Cardápio */
+  .pizza-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
+    gap: 2rem;
+  }
+  .pizza-card {
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow:
+      inset 0 0 10px rgb(255 165 0 / 0.6),
+      0 10px 18px rgb(188 93 7 / 0.3);
+    background: linear-gradient(145deg, #ef7d00, #fa9a00);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
+    user-select: none;
+    position: relative;
+  }
+  .pizza-card:hover {
+    transform: scale(1.06);
+  }
+  .pizza-image {
+    height: 180px;
+    background-position: center;
+    background-size: cover;
+    border-bottom: 2px solid #ffa726;
+  }
+  .pizza-info {
+    flex-grow: 1;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .pizza-info h3 {
+    margin: 0 0 0.3rem 0;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+  .pizza-info p {
+    margin: 0 0 0.65rem 0;
+    font-size: 0.95rem;
+    flex-grow: 1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    line-height: 1.2;
+  }
+  .pizza-price {
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-align: right;
+    filter: drop-shadow(0 0 1px rgba(0,0,0,0.45));
+  }
+  /* Admin buttons container */
+  .admin-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+  }
+  .admin-btn {
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #bf360c;
+    font-weight: 700;
+    line-height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 3px rgb(0 0 0 / 0.3);
+    transition: background 0.3s ease;
+  }
+  .admin-btn:hover {
+    background: white;
+  }
+  /* Modal overlay pizza details */
+  .modal-overlay {
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: linear-gradient(rgba(0,0,0,0.67), rgba(0,0,0,0.7));
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    z-index: 9999;
+  }
+  .modal-overlay.active {
+    display: flex;
+    animation: fadeIn 0.3s ease forwards;
+  }
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+  .modal {
+    background: #fff6e5;
+    max-width: 540px;
+    width: 100%;
+    border-radius: 16px;
+    box-shadow:
+      0 26px 50px -10px rgba(255, 143, 0, 0.65),
+      0 16px 24px 2px rgba(255, 143, 0, 0.35);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 90vh;
+  }
+  .modal-header {
+    padding: 1rem 1.4rem;
+    background: #ef6c00;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 7px rgba(0,0,0,0.55);
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-close-btn {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 900;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.3s ease;
+  }
+  .modal-close-btn:hover {
+    color: #fbc02d;
+  }
+  .modal-body {
+    padding: 1rem 1.5rem 2rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-img {
+    width: 100%;
+    border-radius: 14px;
+    height: 240px;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    box-shadow: 0 5px 12px rgba(255, 165, 0, 0.5);
+  }
+  .modal-desc {
+    font-size: 1.05rem;
+    line-height: 1.35;
+    margin-bottom: 0.6rem;
+    color: #5d3a00;
+    user-select: text;
+  }
+  .modal-price {
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: #d84315;
+    margin-bottom: 1.2rem;
+    user-select: text;
+  }
+  .btn-order {
+    background: #d84315;
+    color: white;
+    font-weight: 700;
+    padding: 0.85rem 1.6rem;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(216, 67, 21, 0.85);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    align-self: flex-start;
+    margin-bottom: 1.6rem;
+    user-select: none;
+  }
+  .btn-order:hover {
+    background: #bf360c;
+    box-shadow: 0 6px 16px rgba(191, 54, 12, 0.9);
+  }
+  /* Comentários */
+  .comments-section {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .comments-section h3 {
+    margin: 0 0 0.7rem 0;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #bf360c;
+    user-select: none;
+  }
+  .comment-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    background: #fff3e0;
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    box-shadow: inset 0 0 4px #ffb74d;
+    user-select: text;
+  }
+  .comment-item {
+    font-size: 0.93rem;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.36rem;
+    border-bottom: 1.4px dotted #d84315;
+    color: #5d3a00;
+  }
+  .comment-item:last-child {
+    margin-bottom: 0;
+    border: none;
+  }
+  .comment-form {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.45rem;
+  }
+  .comment-input {
+    flex-grow: 1;
+    padding: 0.35rem 0.65rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 2px solid #d84315;
+    color: #5d3a00;
+    font-family: 'Poppins', sans-serif;
+    resize: vertical;
+    min-height: 48px;
+    max-height: 108px;
+  }
+  .comment-input::placeholder {
+    color: #d84315aa;
+  }
+  .comment-form button {
+    background: #d84315;
+    color: white;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    padding: 0 1.3rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    box-shadow: 0 3px 10px rgba(216, 67, 21, 0.85);
+    transition: background 0.3s ease;
+  }
+  .comment-form button:hover {
+    background: #bf360c;
+  }
+  /* Seção pedidos/carrinho */
+  #order-section h2 {
+    color: #bf360c;
+  }
+  .order-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+  }
+  .order-list li {
+    background: #fff3e0;
+    margin-bottom: 0.8rem;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px #ffb74d;
+    padding: 0.6rem 1rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #5d3a00;
+    user-select: text;
+  }
+  .order-list li .price {
+    font-weight: 700;
+    color: #d84315;
+  }
+  .order-list li button {
+    background: transparent;
+    border: none;
+    color: #bf360c;
+    font-weight: 900;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.7rem;
+    transition: color 0.2s ease;
+    user-select: none;
+  }
+  .order-list li button:hover {
+    color: #d84315;
+  }
+  .order-total {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #bf360c;
+    margin-top: 1.3rem;
+    text-align: right;
+    text-shadow: 1px 1px 1px rgba(219, 115, 54, 0.6);
+    user-select: text;
+  }
+  .btn-clear-order {
+    background: #d84315;
+    color: white;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    padding: 0.85rem 2rem;
+    margin-top: 1.6rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    box-shadow: 0 6px 20px rgba(216, 67, 21, 0.85);
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+  .btn-clear-order:hover {
+    background: #bf360c;
+  }
+  .empty-msg {
+    font-style: italic;
+    color: #a85b00aa;
+    text-align: center;
+    font-weight: 600;
+    margin-top: 2rem;
+    user-select: none;
+  }
+  /* Painel Administrativo */
+  #admin-panel h2 {
+    color: #bf360c;
+    text-align: center;
+  }
+  #admin-panel form {
+    max-width: 460px;
+    margin: 1.2rem auto 0;
+    background: #fff6e0cc;
+    padding: 1.8rem 2.5rem;
+    border-radius: 18px;
+    box-shadow:
+      0 8px 22px rgba(191, 54, 12, 0.25),
+      inset 0 0 12px rgba(255, 188, 0, 0.9);
+  }
+  #admin-panel label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: #bf360c;
+    font-size: 1rem;
+    user-select: none;
+  }
+  #admin-panel input[type="text"],
+  #admin-panel input[type="number"],
+  #admin-panel input[type="url"],
+  #admin-panel textarea,
+  #admin-panel input[type="password"] {
+    width: 100%;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem;
+    padding: 0.55rem 0.9rem;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    border: 2px solid #d84315;
+    outline-offset: 2px;
+    transition: border-color 0.3s ease;
+    color: #5d3a00;
+  }
+  #admin-panel input[type="text"]:focus,
+  #admin-panel input[type="number"]:focus,
+  #admin-panel input[type="url"]:focus,
+  #admin-panel textarea:focus,
+  #admin-panel input[type="password"]:focus {
+    border-color: #ffa000;
+    background: #fff8dd;
+  }
+  #admin-panel textarea {
+    resize: vertical;
+    min-height: 84px;
+    max-height: 140px;
+  }
+  #admin-panel button[type="submit"] {
+    width: 100%;
+    background: #d84315;
+    color: white;
+    font-weight: 800;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.3s ease;
+    box-shadow: 0 6px 20px rgba(216, 67, 21, 0.85);
+    padding: 0.75rem 0;
+  }
+  #admin-panel button[type="submit"]:hover {
+    background: #bf360c;
+    box-shadow: 0 8px 24px rgba(191, 54, 12, 0.95);
+  }
+  #admin-logout {
+    margin: 2rem auto 0;
+    max-width: 460px;
+    text-align: center;
+  }
+  #admin-logout button {
+    background: #bf360c;
+    border: none;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 0.7rem 1.9rem;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(191, 54, 12, 0.8);
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+  #admin-logout button:hover {
+    background: #d84315;
+  }
+  /* Scrollbar for comments and lists */
+  .comment-list::-webkit-scrollbar,
+  .order-list::-webkit-scrollbar {
+    width: 10px;
+  }
+  .comment-list::-webkit-scrollbar-thumb,
+  .order-list::-webkit-scrollbar-thumb {
+    background: #d84315;
+    border-radius: 12px;
+  }
+  .comment-list::-webkit-scrollbar-track,
+  .order-list::-webkit-scrollbar-track {
+    background: #feedcc;
+    border-radius: 12px;
+  }
+  /* Responsive */
+  @media (max-width: 640px) {
+    nav {
+      flex-wrap: wrap;
+    }
+    nav button {
+      flex: 1 1 50%;
+      border-right: none !important;
+      padding: 1rem 0;
+      font-size: 1rem;
+      user-select: none;
+    }
+    main {
+      padding: 1rem 1.4rem;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  Pizzaria Delícia
+</header>
+<nav>
+  <button id="btn-menu" class="active" aria-controls="menu-section" aria-selected="true" role="tab" tabindex="0">Cardápio</button>
+  <button id="btn-pedidos" aria-controls="order-section" aria-selected="false" role="tab" tabindex="-1">Meus Pedidos</button>
+  <button id="btn-admin" aria-controls="admin-panel" aria-selected="false" role="tab" tabindex="-1">Administração</button>
+</nav>
+<main>
+  <section id="menu-section" class="active" role="tabpanel" tabindex="0" aria-label="Cardápio de Pizzas" aria-hidden="false">
+    <h2>Nosso Cardápio</h2>
+    <div class="pizza-list" id="pizza-list" aria-live="polite" aria-relevant="additions">
+      <!-- Pizzas serão renderizadas aqui -->
+    </div>
+  </section>
+  <section id="order-section" role="tabpanel" tabindex="0" aria-label="Área de Pedidos" aria-hidden="true">
+    <h2>Meus Pedidos</h2>
+    <ul class="order-list" id="order-list" aria-live="polite" aria-relevant="additions removals"></ul>
+    <p class="empty-msg" id="empty-order-msg">Nenhuma pizza no carrinho.</p>
+    <p class="order-total" id="order-total" aria-live="polite" aria-atomic="true"></p>
+    <button class="btn-clear-order" id="clear-order-btn" aria-label="Limpar todos os pedidos" style="display:none;">Limpar Pedido</button>
+  </section>
+  <section id="admin-panel" role="tabpanel" tabindex="0" aria-label="Painel Administrativo" style="display:none;" aria-hidden="true">
+    <h2>Painel Administrativo</h2>
+    <form id="admin-login-form" aria-label="Login do administrador">
+      <label for="admin-password">Senha de administrador</label>
+      <input type="password" id="admin-password" placeholder="Digite a senha" autocomplete="current-password" required />
+      <button type="submit" aria-label="Entrar no painel">Entrar</button>
+    </form>
+    <form id="add-pizza-form" aria-label="Adicionar ou editar pizza" style="display:none; margin-top:2rem;">
+      <input type="hidden" id="pizza-id" />
+      <label for="pizza-name">Nome da Pizza</label>
+      <input type="text" id="pizza-name" required placeholder="Exemplo: Margherita" autocomplete="off" />
+      <label for="pizza-price">Preço (R$)</label>
+      <input type="number" id="pizza-price" min="0" step="0.01" required placeholder="Exemplo: 29.90" />
+      <label for="pizza-image">URL da Imagem</label>
+      <input type="url" id="pizza-image" required placeholder="https://exemplo.com/imagem.jpg" autocomplete="off" />
+      <label for="pizza-desc">Descrição</label>
+      <textarea id="pizza-desc" rows="3" required placeholder="Descrição da pizza"></textarea>
+      <button type="submit" aria-label="Salvar pizza">Salvar Pizza</button>
+      <button type="button" id="cancel-edit-btn" style="margin-top: 8px; background:#bf360c;">Cancelar Edição</button>
+    </form>
+    <div id="admin-logout" style="display:none;">
+      <button id="btn-logout" aria-label="Sair do painel administrativo">Sair do Painel</button>
+    </div>
+  </section>
+</main>
+<!-- Modal detalhes pizza -->
+<div class="modal-overlay" id="pizza-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+  <div class="modal" role="document">
+    <div class="modal-header">
+      <h2 id="modal-title"></h2>
+      <button class="modal-close-btn" aria-label="Fechar modal" id="modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <img src="" alt="" id="modal-img" class="modal-img" />
+      <p id="modal-desc" class="modal-desc"></p>
+      <p id="modal-price" class="modal-price"></p>
+      <button class="btn-order" id="modal-order-btn" aria-label="Adicionar pizza ao pedido">Adicionar ao Pedido</button>
+      <div class="comments-section" aria-label="Comentários da pizza">
+        <h3>Comentários</h3>
+        <div class="comment-list" id="comment-list" aria-live="polite" aria-relevant="additions"></div>
+        <form id="comment-form" class="comment-form" aria-label="Formulário para adicionar comentário">
+          <textarea id="comment-input" class="comment-input" rows="2" placeholder="Escreva seu comentário..." required aria-required="true"></textarea>
+          <button type="submit" aria-label="Enviar comentário">Enviar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const adminPassword = '123';
+  let pizzas = [];
+  let order = {};
+  let currentPizzaId = null;
+  let isAdminLoggedIn = false;
+
+  const btnMenu = document.getElementById('btn-menu');
+  const btnPedidos = document.getElementById('btn-pedidos');
+  const btnAdmin = document.getElementById('btn-admin');
+
+  const sections = {
+    menu: document.getElementById('menu-section'),
+    order: document.getElementById('order-section'),
+    admin: document.getElementById('admin-panel'),
+  };
+
+  const pizzaListEl = document.getElementById('pizza-list');
+  const orderListEl = document.getElementById('order-list');
+  const emptyOrderMsg = document.getElementById('empty-order-msg');
+  const orderTotalEl = document.getElementById('order-total');
+  const clearOrderBtn = document.getElementById('clear-order-btn');
+
+  const adminLoginForm = document.getElementById('admin-login-form');
+  const adminPasswordInput = document.getElementById('admin-password');
+  const addPizzaForm = document.getElementById('add-pizza-form');
+  const pizzaIdInput = document.getElementById('pizza-id');
+  const pizzaNameInput = document.getElementById('pizza-name');
+  const pizzaPriceInput = document.getElementById('pizza-price');
+  const pizzaImageInput = document.getElementById('pizza-image');
+  const pizzaDescInput = document.getElementById('pizza-desc');
+  const adminLogoutSection = document.getElementById('admin-logout');
+  const btnLogout = document.getElementById('btn-logout');
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+  const modalOverlay = document.getElementById('pizza-modal');
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+  const modalTitle = document.getElementById('modal-title');
+  const modalImg = document.getElementById('modal-img');
+  const modalDesc = document.getElementById('modal-desc');
+  const modalPrice = document.getElementById('modal-price');
+  const modalOrderBtn = document.getElementById('modal-order-btn');
+
+  const commentListEl = document.getElementById('comment-list');
+  const commentForm = document.getElementById('comment-form');
+  const commentInput = document.getElementById('comment-input');
+
+  function savePizzas() {
+    localStorage.setItem('pizzas', JSON.stringify(pizzas));
+  }
+  function loadPizzas() {
+    const data = localStorage.getItem('pizzas');
+    if (data) {
+      pizzas = JSON.parse(data);
+    } else {
+      pizzas = [
+        {id:'p1',name:'Margherita',price:29.9,image:'https://images.unsplash.com/photo-1601924582971-7e6d1060568a?auto=format&fit=crop&w=600&q=80',description:'Clássica pizza com molho de tomate, muçarela e manjericão fresco.',comments:[]},
+        {id:'p2',name:'Pepperoni',price:39.9,image:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80',description:'Cobertura generosa de pepperoni importado, com queijo e molho especial.',comments:[]},
+        {id:'p3',name:'Quatro Queijos',price:34.9,image:'https://images.unsplash.com/photo-1617191517815-9b88f99de2c5?auto=format&fit=crop&w=600&q=80',description:'Combinação deliciosa de muçarela, gorgonzola, parmesão e provolone.',comments:[]}
+      ];
+      savePizzas();
+    }
+  }
+  function saveOrder() {
+    localStorage.setItem('order', JSON.stringify(order));
+  }
+  function loadOrder() {
+    const data = localStorage.getItem('order');
+    if (data) order = JSON.parse(data);
+    else order = {};
+  }
+  function saveAdminState() {
+    localStorage.setItem('adminLoggedIn', isAdminLoggedIn ? '1' : '0');
+  }
+  function loadAdminState() {
+    const val = localStorage.getItem('adminLoggedIn');
+    isAdminLoggedIn = val === '1';
+  }
+  function renderPizzas() {
+    pizzaListEl.innerHTML = '';
+    if (pizzas.length === 0) {
+      pizzaListEl.innerHTML = '<p style="user-select:none; color:#a85b00aa; font-weight:600; text-align:center;">Nenhuma pizza disponível no momento.</p>';
+      return;
+    }
+    pizzas.forEach(pizza => {
+      const card = document.createElement('div');
+      card.className = 'pizza-card';
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-pressed', 'false');
+      card.dataset.id = pizza.id;
+      card.innerHTML = `
+            <div class="pizza-image" style="background-image:url('${pizza.image}')"></div>
+            <div class="pizza-info">
+                <h3>${pizza.name}</h3>
+                <p>${pizza.description.length > 90 ? pizza.description.slice(0, 90) + '...' : pizza.description}</p>
+                <div class="pizza-price">R$ ${pizza.price.toFixed(2)}</div>
+            </div>
+            <div class="admin-controls" style="display: ${isAdminLoggedIn ? 'flex' : 'none'};">
+              <button title="Editar pizza" class="admin-btn edit-btn" aria-label="Editar pizza ${pizza.name}">✎</button>
+              <button title="Excluir pizza" class="admin-btn delete-btn" aria-label="Excluir pizza ${pizza.name}">×</button>
+            </div>
+        `;
+      // Open modal on card click except on admin buttons
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.admin-controls')) return;
+        openPizzaModal(pizza.id);
+      });
+      card.addEventListener('keydown', e => {
+        if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('.admin-controls')) {
+          e.preventDefault();
+          openPizzaModal(pizza.id);
+        }
+      });
+
+      // Admin edit button
+      card.querySelector('.edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openEditPizza(pizza.id);
+      });
+      // Admin delete button
+      card.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deletePizza(pizza.id);
+      });
+
+      pizzaListEl.appendChild(card);
+    });
+  }
+  function renderOrder() {
+    orderListEl.innerHTML = '';
+    const pizzaIds = Object.keys(order);
+    if (pizzaIds.length === 0) {
+      emptyOrderMsg.style.display = 'block';
+      clearOrderBtn.style.display = 'none';
+      orderTotalEl.textContent = '';
+      return;
+    }
+    emptyOrderMsg.style.display = 'none';
+    clearOrderBtn.style.display = 'inline-block';
+    let totalPrice = 0;
+    pizzaIds.forEach(id => {
+      const pizza = pizzas.find(p => p.id === id);
+      if (!pizza) return;
+      const qty = order[id];
+      const totalItemPrice = pizza.price * qty;
+      totalPrice += totalItemPrice;
+      const li = document.createElement('li');
+      li.textContent = `${qty} x ${pizza.name}`;
+      const spanPrice = document.createElement('span');
+      spanPrice.className = 'price';
+      spanPrice.textContent = 'R$ ' + totalItemPrice.toFixed(2);
+      const btnRemove = document.createElement('button');
+      btnRemove.setAttribute('aria-label', `Remover uma unidade da pizza ${pizza.name} do pedido`);
+      btnRemove.innerHTML = '&times;';
+      btnRemove.title = 'Remover uma unidade';
+      btnRemove.addEventListener('click', () => {
+        removeOneFromOrder(id);
+      });
+      li.appendChild(spanPrice);
+      li.appendChild(btnRemove);
+      orderListEl.appendChild(li);
+    });
+    orderTotalEl.textContent = 'Total: R$ ' + totalPrice.toFixed(2);
+  }
+  function removeOneFromOrder(pizzaId) {
+    if (!order[pizzaId]) return;
+    if (order[pizzaId] === 1) {
+      delete order[pizzaId];
+    } else {
+      order[pizzaId]--;
+    }
+    saveOrder();
+    renderOrder();
+  }
+  function openPizzaModal(pizzaId) {
+    currentPizzaId = pizzaId;
+    const pizza = pizzas.find(p => p.id === pizzaId);
+    if (!pizza) return;
+    modalTitle.textContent = pizza.name;
+    modalImg.src = pizza.image;
+    modalImg.alt = 'Foto da pizza ' + pizza.name;
+    modalDesc.textContent = pizza.description;
+    modalPrice.textContent = 'Preço: R$ ' + pizza.price.toFixed(2);
+    renderComments(pizza.comments);
+    commentInput.value = '';
+    modalOverlay.classList.add('active');
+    modalOrderBtn.focus();
+  }
+  function closePizzaModal() {
+    modalOverlay.classList.remove('active');
+    currentPizzaId = null;
+  }
+  function addPizzaToOrder() {
+    if (!currentPizzaId) return;
+    if (order[currentPizzaId]) order[currentPizzaId]++;
+    else order[currentPizzaId] = 1;
+    saveOrder();
+    renderOrder();
+    alert('Pizza adicionada ao pedido!');
+    closePizzaModal();
+    showSection('order');
+    setActiveNavButton(btnPedidos);
+  }
+  function renderComments(comments) {
+    commentListEl.innerHTML = '';
+    if (!comments || comments.length === 0) {
+      commentListEl.innerHTML = '<p style="color:#a85b00aa; font-style: italic;">Nenhum comentário ainda. Seja o primeiro!</p>';
+      return;
+    }
+    comments.forEach(comment => {
+      const div = document.createElement('div');
+      div.className = 'comment-item';
+      div.textContent = comment;
+      commentListEl.appendChild(div);
+    });
+  }
+  function addComment(e) {
+    e.preventDefault();
+    const text = commentInput.value.trim();
+    if (!text || !currentPizzaId) return;
+    const pizza = pizzas.find(p => p.id === currentPizzaId);
+    if (!pizza) return;
+    pizza.comments = pizza.comments || [];
+    pizza.comments.push(text);
+    savePizzas();
+    renderComments(pizza.comments);
+    commentInput.value = '';
+  }
+  function clearOrder() {
+    if (!confirm('Deseja realmente limpar todos os pedidos?')) return;
+    order = {};
+    saveOrder();
+    renderOrder();
+  }
+  function showSection(name) {
+    Object.keys(sections).forEach(key => {
+      const section = sections[key];
+      if (key === name) {
+        section.classList.add('active');
+        section.style.display = 'block';
+        section.setAttribute('aria-hidden', 'false');
+        section.setAttribute('tabindex', '0');
+      } else {
+        section.classList.remove('active');
+        section.style.display = 'none';
+        section.setAttribute('aria-hidden', 'true');
+        section.setAttribute('tabindex', '-1');
+      }
+    });
+  }
+  function setActiveNavButton(button) {
+    [btnMenu, btnPedidos, btnAdmin].forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+      btn.tabIndex = -1;
+    });
+    button.classList.add('active');
+    button.setAttribute('aria-selected', 'true');
+    button.tabIndex = 0;
+    button.focus();
+  }
+  function loginAdmin(e) {
+    e.preventDefault();
+    const pass = adminPasswordInput.value.trim();
+    if (pass === adminPassword) {
+      isAdminLoggedIn = true;
+      saveAdminState();
+      showAdminContent(true);
+      alert('Login efetuado com sucesso!');
+      adminPasswordInput.value = '';
+      showSection('admin');
+      setActiveNavButton(btnAdmin);
+      renderPizzas();
+    } else {
+      alert('Senha incorreta. Tente novamente!');
+    }
+  }
+  function logoutAdmin() {
+    if(!confirm('Deseja sair do painel administrativo?')) return;
+    isAdminLoggedIn = false;
+    saveAdminState();
+    showAdminContent(false);
+    showSection('menu');
+    setActiveNavButton(btnMenu);
+    renderPizzas();
+  }
+  function showAdminContent(show) {
+    const addingPizzaFormVisible = show;
+    adminLoginForm.style.display = show ? 'none' : 'block';
+    addPizzaForm.style.display = addingPizzaFormVisible ? 'block' : 'none';
+    adminLogoutSection.style.display = show ? 'block' : 'none';
+  }
+  function addPizza(e) {
+    e.preventDefault();
+    const id = pizzaIdInput.value;
+    const name = pizzaNameInput.value.trim();
+    const price = parseFloat(pizzaPriceInput.value);
+    const image = pizzaImageInput.value.trim();
+    const description = pizzaDescInput.value.trim();
+    if (!name || !image || !description || isNaN(price) || price < 0) {
+      alert('Por favor, preencha todos os campos corretamente.');
+      return;
+    }
+    if(id){ // editar pizza existente
+      const index = pizzas.findIndex(p => p.id === id);
+      if (index !== -1) {
+        pizzas[index].name = name;
+        pizzas[index].price = price;
+        pizzas[index].image = image;
+        pizzas[index].description = description;
+        alert('Pizza atualizada com sucesso!');
+      } else {
+        alert('Erro: pizza não encontrada para edição.');
+      }
+    } else { // nova pizza
+      const newId = 'p' + Date.now();
+      pizzas.push({
+        id: newId,
+        name,
+        price,
+        image,
+        description,
+        comments: []
+      });
+      alert('Pizza adicionada com sucesso!');
+    }
+    savePizzas();
+    renderPizzas();
+    addPizzaForm.reset();
+    pizzaIdInput.value = '';
+  }
+  function openEditPizza(id) {
+    const pizza = pizzas.find(p => p.id === id);
+    if (!pizza) {
+      alert('Pizza não encontrada.');
+      return;
+    }
+    pizzaIdInput.value = pizza.id;
+    pizzaNameInput.value = pizza.name;
+    pizzaPriceInput.value = pizza.price;
+    pizzaImageInput.value = pizza.image;
+    pizzaDescInput.value = pizza.description;
+    showSection('admin');
+    setActiveNavButton(btnAdmin);
+    showAdminContent(true);
+  }
+  function deletePizza(id) {
+    if(!confirm('Tem certeza que deseja remover esta pizza?')) return;
+    pizzas = pizzas.filter(p => p.id !== id);
+    savePizzas();
+    // Se a pizza estiver no pedido, remove do pedido também
+    if(order[id]){
+      delete order[id];
+      saveOrder();
+      renderOrder();
+    }
+    renderPizzas();
+  }
+  cancelEditBtn.addEventListener('click', e => {
+    e.preventDefault();
+    addPizzaForm.reset();
+    pizzaIdInput.value = '';
+  });
+
+  btnMenu.addEventListener('click', () => {
+    showSection('menu');
+    setActiveNavButton(btnMenu);
+  });
+  btnPedidos.addEventListener('click', () => {
+    showSection('order');
+    setActiveNavButton(btnPedidos);
+  });
+  btnAdmin.addEventListener('click', () => {
+    showSection('admin');
+    setActiveNavButton(btnAdmin);
+  });
+  modalCloseBtn.addEventListener('click', closePizzaModal);
+  modalOverlay.addEventListener('click', e => {
+    if (e.target === modalOverlay) closePizzaModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+      closePizzaModal();
+    }
+  });
+  modalOrderBtn.addEventListener('click', addPizzaToOrder);
+  commentForm.addEventListener('submit', addComment);
+  clearOrderBtn.addEventListener('click', clearOrder);
+  adminLoginForm.addEventListener('submit', loginAdmin);
+  addPizzaForm.addEventListener('submit', addPizza);
+  btnLogout.addEventListener('click', logoutAdmin);
+
+  function init() {
+    loadPizzas();
+    loadOrder();
+    loadAdminState();
+    renderPizzas();
+    renderOrder();
+    showAdminContent(isAdminLoggedIn);
+    if(isAdminLoggedIn) {
+      showSection('admin');
+      setActiveNavButton(btnAdmin);
+    } else {
+      showSection('menu');
+      setActiveNavButton(btnMenu);
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
+
